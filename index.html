@@ -73,8 +73,8 @@
                     <b class="text-slate-900">Acesso central do DROP MOD.</b><br>Use o MASTER para criar e administrar as empresas e os respectivos administradores.
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Usuário MASTER</label>
-                    <input type="text" id="master-user" value="master" autocomplete="username" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">E-mail MASTER</label>
+                    <input type="email" id="master-user" placeholder="seu@email.com" autocomplete="username" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha MASTER</label>
@@ -83,7 +83,7 @@
                 <button onclick="fazerLoginMaster()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition text-sm shadow-md">
                     Entrar como MASTER
                 </button>
-                <button type="button" onclick="abrirSetupMaster()" class="w-full text-xs text-slate-500 hover:text-slate-900 underline">Primeiro acesso / configurar MASTER</button>
+                <button type="button" class="hidden">Primeiro acesso / configurar MASTER</button>
             </div>
         </div>
     </div>
@@ -125,6 +125,7 @@
             <input id="nova-empresa-nome" placeholder="Nome da empresa" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
             <input id="novo-adm-nome" placeholder="Nome do ADM" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
             <input id="novo-adm-user" placeholder="Usuário do ADM (único)" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
+            <input id="novo-adm-email" type="email" placeholder="E-mail do ADM" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
             <input id="novo-adm-pass" type="password" placeholder="Senha inicial do ADM" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
             <div class="flex gap-2"><button onclick="fecharModalNovaEmpresa()" class="w-1/2 bg-slate-200 py-2.5 rounded-xl text-xs font-bold">Cancelar</button><button onclick="criarEmpresaMaster()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold">Criar empresa + ADM</button></div>
         </div>
@@ -657,7 +658,7 @@
         let masterDb = JSON.parse(localStorage.getItem('dropmod_master_v1')) || { master: null, empresas: [] };
 
         // Configurações do Supabase armazenadas no localStorage
-        let supabaseConfig = JSON.parse(localStorage.getItem('dropmod_supabase_config')) || { url: '', key: '' };
+        let supabaseConfig = { url: 'https://ujjmgocykfrjefpjpnpd.supabase.co', key: 'sb_publishable_mmSrju2wJ-uk9wZO5b8j-g_-BZqZJdi' };
         let supabaseClient = null;
 
         if (supabaseConfig.url && supabaseConfig.key) {
@@ -820,30 +821,146 @@
             mudarTipoLogin('master');
         }
         async function fazerLoginMaster() {
-            const username=(document.getElementById('master-user').value||'master').trim();
+            const email=(document.getElementById('master-user').value||'').trim().toLowerCase();
             const pass=document.getElementById('master-pass').value;
-            if(!masterDb.master) return abrirSetupMaster();
-            if(username!==masterDb.master.username || await hashSenha(pass)!==masterDb.master.passwordHash) return alert('Usuário ou senha MASTER inválidos.');
-            masterSessaoAtiva=true; document.getElementById('loginModal').classList.add('hidden'); document.getElementById('masterContent').classList.remove('hidden'); renderMasterEmpresas();
+            if(!email || !pass) return alert('Digite o e-mail e a senha do MASTER.');
+            if(!supabaseClient) return alert('Supabase não configurado.');
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password: pass });
+                if(error) throw error;
+                if(!data.user) throw new Error('Não foi possível autenticar o MASTER.');
+
+                const { data: perfil, error: perfilError } = await supabaseClient
+                    .from('perfis')
+                    .select('id, nome, usuario, tipo, empresa_id, ativo')
+                    .eq('id', data.user.id)
+                    .maybeSingle();
+
+                if(perfilError) throw perfilError;
+                if(!perfil || perfil.tipo !== 'MASTER' || !perfil.ativo || perfil.empresa_id !== null) {
+                    await supabaseClient.auth.signOut();
+                    throw new Error('Esta conta não possui permissão MASTER.');
+                }
+
+                masterSessaoAtiva=true;
+                document.getElementById('loginModal').classList.add('hidden');
+                document.getElementById('masterContent').classList.remove('hidden');
+                document.getElementById('master-pass').value='';
+                await renderMasterEmpresas();
+            } catch(err) {
+                console.error(err);
+                alert(err.message || 'E-mail ou senha do MASTER inválidos.');
+            }
         }
-        function logoutMaster(){ masterSessaoAtiva=false; document.getElementById('masterContent').classList.add('hidden'); document.getElementById('loginModal').classList.remove('hidden'); mudarTipoLogin('master'); document.getElementById('master-pass').value=''; }
+
+        async function logoutMaster(){
+            try { if(supabaseClient) await supabaseClient.auth.signOut(); } catch(e) { console.warn(e); }
+            masterSessaoAtiva=false;
+            document.getElementById('masterContent').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
+            mudarTipoLogin('master');
+            document.getElementById('master-pass').value='';
+        }
+
         function abrirModalNovaEmpresa(){ if(!masterSessaoAtiva) return; const e=document.getElementById('modal-nova-empresa'); e.classList.remove('hidden'); e.classList.add('flex'); }
         function fecharModalNovaEmpresa(){ const e=document.getElementById('modal-nova-empresa'); e.classList.add('hidden'); e.classList.remove('flex'); }
-        function criarEstadoEmpresa(nome){ return { nomeLoja:nome, logoLoja:'https://i.ibb.co/M580Zw7n/1787759966265.png', adminPassword:'', adminRecoveryKey:'', operadores:[], produtosBase:[], variacoes:[], historico:[], tamanhos:[{tipo:'Tamanho',valor:'P'},{tipo:'Tamanho',valor:'M'},{tipo:'Tamanho',valor:'G'},{tipo:'Tamanho',valor:'GG'}], categorias:['Vestuário','Calçados','Perfumaria','Acessórios'], caderneta:[], clientes:[] }; }
+
         async function criarEmpresaMaster(){
-            const nome=(document.getElementById('nova-empresa-nome').value||'').trim(); const admNome=(document.getElementById('novo-adm-nome').value||'').trim(); const user=(document.getElementById('novo-adm-user').value||'').trim().toLowerCase(); const pass=document.getElementById('novo-adm-pass').value;
-            if(!nome||!admNome||!user||pass.length<6) return alert('Preencha empresa, nome do ADM, usuário e senha (mínimo 6 caracteres).');
-            if(masterDb.empresas.some(e=>e.admin.username===user)) return alert('Esse usuário de ADM já existe. Escolha outro.');
-            const id='emp_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-            masterDb.empresas.push({id,nome,ativa:true,criadaEm:new Date().toISOString(),admin:{nome:admNome,username:user,passwordHash:await hashSenha(pass)},state:criarEstadoEmpresa(nome)});
-            localStorage.setItem('dropmod_master_v1',JSON.stringify(masterDb)); fecharModalNovaEmpresa(); renderMasterEmpresas();
-            document.getElementById('nova-empresa-nome').value=''; document.getElementById('novo-adm-nome').value=''; document.getElementById('novo-adm-user').value=''; document.getElementById('novo-adm-pass').value='';
-            alert('Empresa criada. O ADM já pode entrar com as credenciais definidas.');
+            if(!masterSessaoAtiva || !supabaseClient) return alert('Sessão MASTER inválida.');
+
+            const nome=(document.getElementById('nova-empresa-nome').value||'').trim();
+            const admNome=(document.getElementById('novo-adm-nome').value||'').trim();
+            const user=(document.getElementById('novo-adm-user').value||'').trim().toLowerCase();
+            const email=(document.getElementById('novo-adm-email').value||'').trim().toLowerCase();
+            const pass=document.getElementById('novo-adm-pass').value;
+
+            if(!nome||!admNome||!user||!email||pass.length<6) {
+                return alert('Preencha empresa, nome do ADM, usuário, e-mail e senha (mínimo 6 caracteres).');
+            }
+
+            try {
+                const { data: empresa, error: empresaError } = await supabaseClient
+                    .from('empresas')
+                    .insert({ nome, ativa:true })
+                    .select('id, nome, ativa, criado_em')
+                    .single();
+
+                if(empresaError) throw empresaError;
+
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
+
+                const { data: result, error: fnError } = await supabaseClient.functions.invoke('criar-adm', {
+                    body: { empresa_id: empresa.id, nome: admNome, usuario: user, email, senha: pass }
+                });
+
+                if(fnError) {
+                    await supabaseClient.from('empresas').delete().eq('id', empresa.id);
+                    throw fnError;
+                }
+                if(!result?.ok) {
+                    await supabaseClient.from('empresas').delete().eq('id', empresa.id);
+                    throw new Error(result?.error || 'Não foi possível criar o ADM.');
+                }
+
+                fecharModalNovaEmpresa();
+                ['nova-empresa-nome','novo-adm-nome','novo-adm-user','novo-adm-email','novo-adm-pass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+                await renderMasterEmpresas();
+                alert('Empresa e ADM criados com sucesso. O ADM já pode entrar no aplicativo público.');
+            } catch(err) {
+                console.error(err);
+                alert(err.message || 'Erro ao criar empresa e ADM.');
+            }
         }
-        function renderMasterEmpresas(){ const box=document.getElementById('master-lista-empresas'); if(!box)return; box.innerHTML=masterDb.empresas.length?masterDb.empresas.map(e=>`<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm"><div class="flex justify-between gap-3"><div><h3 class="font-black text-slate-900">${escapeHtml(e.nome)}</h3><p class="text-xs text-slate-500 mt-1">ADM: <b>${escapeHtml(e.admin.nome)}</b></p><p class="text-xs text-slate-500">Usuário: <b>${escapeHtml(e.admin.username)}</b></p></div><span class="text-[10px] font-black px-2 py-1 rounded-full ${e.ativa?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-700'}">${e.ativa?'ATIVA':'INATIVA'}</span></div><div class="mt-4 flex gap-2"><button onclick="alternarEmpresaMaster('${e.id}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100">${e.ativa?'Desativar':'Ativar'}</button><button onclick="mostrarCredencialAdm('${e.id}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700">Ver acesso</button></div></div>`).join(''):`<div class="md:col-span-2 xl:col-span-3 bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-sm text-slate-400">Nenhuma empresa criada. Clique em <b>+ Nova empresa</b>.</div>`; }
+
+        async function renderMasterEmpresas(){
+            const box=document.getElementById('master-lista-empresas');
+            if(!box || !supabaseClient) return;
+            box.innerHTML='<div class="md:col-span-2 xl:col-span-3 text-center text-sm text-slate-400 py-10">Carregando empresas...</div>';
+
+            const { data: empresas, error } = await supabaseClient
+                .from('empresas')
+                .select('id, nome, logo_url, ativa, criado_em')
+                .order('criado_em', { ascending:false });
+
+            if(error) {
+                console.error(error);
+                box.innerHTML='<div class="md:col-span-2 xl:col-span-3 bg-red-50 border border-red-200 rounded-2xl p-6 text-sm text-red-700">Não foi possível carregar as empresas.</div>';
+                return;
+            }
+
+            if(!empresas?.length) {
+                box.innerHTML='<div class="md:col-span-2 xl:col-span-3 bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-sm text-slate-400">Nenhuma empresa criada. Clique em <b>+ Nova empresa</b>.</div>';
+                return;
+            }
+
+            box.innerHTML=empresas.map(e=>`<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+                <div class="flex justify-between gap-3">
+                    <div><h3 class="font-black text-slate-900">${escapeHtml(e.nome)}</h3>
+                    <p class="text-xs text-slate-500 mt-1">ID: <b>${escapeHtml(e.id)}</b></p></div>
+                    <span class="text-[10px] font-black px-2 py-1 rounded-full ${e.ativa?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-700'}">${e.ativa?'ATIVA':'INATIVA'}</span>
+                </div>
+                <div class="mt-4 flex gap-2"><button onclick="alternarEmpresaMaster('${e.id}', ${!e.ativa})" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100">${e.ativa?'Desativar':'Ativar'}</button></div>
+            </div>`).join('');
+        }
+
         function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-        function alternarEmpresaMaster(id){const e=masterDb.empresas.find(x=>x.id===id); if(!e)return; e.ativa=!e.ativa; localStorage.setItem('dropmod_master_v1',JSON.stringify(masterDb)); renderMasterEmpresas();}
-        function mostrarCredencialAdm(id){const e=masterDb.empresas.find(x=>x.id===id); if(e) alert(`Empresa: ${e.nome}\nADM: ${e.admin.nome}\nUsuário: ${e.admin.username}\n\nA senha não é exibida por segurança.`);}
+
+        async function alternarEmpresaMaster(id, ativa){
+            if(!masterSessaoAtiva || !supabaseClient) return;
+            const { error } = await supabaseClient.from('empresas').update({ ativa }).eq('id', id);
+            if(error) return alert(error.message);
+            await renderMasterEmpresas();
+        }
+
+        async function mostrarCredencialAdm(id){
+            if(!masterSessaoAtiva || !supabaseClient) return;
+            const { data, error } = await supabaseClient.from('perfis').select('nome, usuario, ativo').eq('empresa_id', id).eq('tipo','ADM').limit(1).maybeSingle();
+            if(error) return alert(error.message);
+            if(!data) return alert('Nenhum ADM cadastrado para esta empresa.');
+            alert(`ADM: ${data.nome}\nUsuário: ${data.usuario}\nStatus: ${data.ativo?'Ativo':'Inativo'}\n\nA senha não pode ser exibida pelo Supabase. O MASTER poderá redefini-la em uma próxima etapa.`);
+        }
 
 function mudarTipoLogin(tipo) {
             currentTipoLogin = tipo;

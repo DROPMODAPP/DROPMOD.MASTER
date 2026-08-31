@@ -1,0 +1,2 @@
+# DROPMOD.MASTER
+Uso interno.

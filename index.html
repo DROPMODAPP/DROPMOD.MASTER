@@ -206,6 +206,7 @@
             <div class="p-4 text-xs text-slate-400 border-t border-slate-800 flex items-center justify-between">
                 <div>
                     <span id="userInfoSidebar" class="font-bold text-slate-200 block text-[11px]">Perfil: -</span>
+                    <span id="userRoleSidebar" class="font-bold text-slate-300 block text-[10px]">-</span>
                     <span id="dbStatusLabel" class="text-[10px] text-amber-400">Modo: Local / Supabase</span>
                 </div>
                 <button onclick="logout()" class="bg-red-600/80 hover:bg-red-600 text-white px-2.5 py-1 rounded font-bold text-[10px] transition">Sair</button>
@@ -1081,7 +1082,18 @@ function mudarTipoLogin(tipo) {
         function concluirLogin(perfilTexto) {
             document.getElementById('loginModal').classList.add('hidden');
             document.getElementById('appContent').classList.remove('hidden');
-            document.getElementById('userInfoSidebar').innerText = `Perfil: ${perfilTexto}`;
+
+            const nomePerfil = usuarioAtivoSessao?.nome || 'Usuário';
+            const tipoPerfil = String(usuarioAtivoSessao?.tipo || currentUserRole || '').toLowerCase();
+            const roleTexto = (tipoPerfil === 'admin' || tipoPerfil === 'adm' || tipoPerfil === 'administrador')
+                ? 'Administrador (Total)'
+                : (tipoPerfil === 'operador' ? 'Operador' : perfilTexto || 'Usuário');
+
+            const nomeEl = document.getElementById('userInfoSidebar');
+            const roleEl = document.getElementById('userRoleSidebar');
+            if (nomeEl) nomeEl.innerText = `Perfil: ${nomePerfil}`;
+            if (roleEl) roleEl.innerText = roleTexto;
+
             if (supabaseClient) carregarBancoDoSupabase();
             renderizar();
         }

@@ -108,24 +108,50 @@
 
     <!-- MODAL DE GERENCIAMENTO DO ADM PELO MASTER -->
     <div id="modal-gerenciar-adm-master" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center z-[70] p-4">
-        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md space-y-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
             <div>
-                <h3 class="text-lg font-black text-slate-900">Gerenciar Administrador</h3>
+                <h3 class="text-lg font-black text-slate-900">Gerenciar Empresa e Administrador</h3>
                 <p id="master-adm-contexto" class="text-xs text-slate-500 mt-1"></p>
             </div>
             <input type="hidden" id="master-adm-id">
+            <input type="hidden" id="master-adm-empresa-id">
+
             <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome do ADM</label>
-                <input id="master-adm-nome" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome da empresa</label>
+                <input id="master-empresa-nome" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500">
             </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nova senha</label>
-                <div class="relative"><input id="master-adm-senha" type="password" placeholder="Deixe vazio para não alterar" class="w-full p-3 pr-12 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500"><button type="button" onclick="alternarVisibilidadeSenha('master-adm-senha', this)" aria-label="Mostrar nova senha" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500">👁</button></div>
-                <p class="text-[10px] text-slate-400 mt-1">A senha atual não pode ser revelada pelo Supabase. Aqui você pode definir uma nova.</p>
+
+            <div class="grid sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome do ADM</label>
+                    <input id="master-adm-nome" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Usuário do ADM</label>
+                    <input id="master-adm-usuario" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500">
+                </div>
             </div>
-            <div class="flex gap-2 pt-2">
-                <button type="button" onclick="fecharGerenciarAdmMaster()" class="w-1/2 bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold">Cancelar</button>
-                <button type="button" onclick="salvarGerenciamentoAdmMaster()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold">Salvar alterações</button>
+
+            <div class="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-bold text-slate-700">Senha do ADM</p>
+                        <p class="text-[10px] text-slate-500">A senha atual não pode ser revelada pelo Supabase.</p>
+                    </div>
+                    <span class="text-[10px] font-bold text-slate-400">NÃO RECUPERÁVEL</span>
+                </div>
+                <div class="relative mt-3">
+                    <input id="master-adm-senha" type="password" placeholder="Digite uma nova senha para redefinir" class="w-full p-3 pr-24 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500">
+                    <button type="button" onclick="gerarSenhaAdmMaster()" class="absolute right-10 top-1/2 -translate-y-1/2 text-xs font-bold text-indigo-600">Gerar</button>
+                    <button type="button" onclick="alternarVisibilidadeSenha('master-adm-senha', this)" aria-label="Mostrar nova senha" class="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500">👁</button>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Deixe vazio para manter a senha atual.</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-2">
+                <button type="button" onclick="fecharGerenciarAdmMaster()" class="flex-1 min-w-[110px] bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold">Cancelar</button>
+                <button type="button" onclick="salvarGerenciamentoAdmMaster()" class="flex-1 min-w-[150px] bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold">Salvar alterações</button>
+                <button type="button" onclick="excluirAdmMaster()" class="w-full bg-red-50 text-red-700 border border-red-200 py-2.5 rounded-xl text-xs font-bold">🗑 Excluir este ADM</button>
             </div>
         </div>
     </div>
@@ -937,7 +963,7 @@
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2">
                     <button onclick="alternarEmpresaMaster('${e.id}', ${!e.ativa})" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100">${e.ativa?'Desativar':'Ativar'}</button>
-                    ${adm ? `<button onclick="abrirGerenciarAdmMaster('${e.id}','${escapeHtml(adm.id)}','${escapeHtml(adm.nome)}','${escapeHtml(adm.usuario)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700">Gerenciar ADM</button>
+                    ${adm ? `<button onclick="abrirGerenciarAdmMaster('${e.id}','${escapeHtml(adm.id)}','${escapeHtml(e.nome)}','${escapeHtml(adm.nome)}','${escapeHtml(adm.usuario)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700">Gerenciar ADM</button>
                     <button onclick="entrarPerfilAdmMaster('${e.id}','${escapeHtml(adm.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-600 text-white">↪ Acessar painel</button>` : ''}
                 </div>
             </div>`;
@@ -964,15 +990,27 @@
         let masterManagedCompanyId = null;
         let masterManagedCompanyName = null;
 
-        function abrirGerenciarAdmMaster(empresaId, admId, nome, usuario){
+        function abrirGerenciarAdmMaster(empresaId, admId, empresaNome, nome, usuario){
             if(!masterSessaoAtiva) return;
             document.getElementById('master-adm-id').value = admId;
+            document.getElementById('master-adm-empresa-id').value = empresaId;
+            document.getElementById('master-empresa-nome').value = empresaNome || '';
             document.getElementById('master-adm-nome').value = nome || '';
+            document.getElementById('master-adm-usuario').value = usuario || '';
             document.getElementById('master-adm-senha').value = '';
-            document.getElementById('master-adm-contexto').innerText = `Empresa: ${empresaId} • Usuário: ${usuario}`;
+            document.getElementById('master-adm-contexto').innerText = `Empresa: ${empresaNome || empresaId}`;
             const m=document.getElementById('modal-gerenciar-adm-master'); m.classList.remove('hidden'); m.classList.add('flex');
         }
         function fecharGerenciarAdmMaster(){ const m=document.getElementById('modal-gerenciar-adm-master'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+        function gerarSenhaAdmMaster(){
+            const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+            let senha='';
+            for(let i=0;i<10;i++) senha+=chars[Math.floor(Math.random()*chars.length)];
+            const input=document.getElementById('master-adm-senha');
+            input.value=senha;
+            input.type='text';
+        }
 
         async function chamarMasterAdmin(payload){
             if(!supabaseClient) throw new Error('Supabase não configurado.');
@@ -991,15 +1029,32 @@
         async function salvarGerenciamentoAdmMaster(){
             try{
                 const admId=document.getElementById('master-adm-id').value;
+                const empresaId=document.getElementById('master-adm-empresa-id').value;
+                const empresaNome=document.getElementById('master-empresa-nome').value.trim();
                 const nome=document.getElementById('master-adm-nome').value.trim();
+                const usuario=document.getElementById('master-adm-usuario').value.trim().toLowerCase();
                 const senha=document.getElementById('master-adm-senha').value;
-                if(!nome) return alert('Informe o nome do ADM.');
+                if(!empresaNome || !nome || !usuario) return alert('Preencha o nome da empresa, nome do ADM e usuário.');
                 if(senha && senha.length<6) return alert('A nova senha deve ter pelo menos 6 caracteres.');
-                await chamarMasterAdmin({action:'update_admin',admin_id:admId,nome,senha:senha||null});
+                await chamarMasterAdmin({action:'update_admin',admin_id:admId,empresa_id:empresaId,empresa_nome:empresaNome,nome,usuario,senha:senha||null});
                 fecharGerenciarAdmMaster();
                 await renderMasterEmpresas();
-                alert(senha ? 'Nome e senha do ADM atualizados.' : 'Nome do ADM atualizado.');
+                alert(senha ? 'Empresa, nome, usuário e senha do ADM atualizados.' : 'Empresa, nome e usuário do ADM atualizados.');
             }catch(err){console.error(err);alert(err.message || 'Não foi possível atualizar o ADM.');}
+        }
+
+        async function excluirAdmMaster(){
+            const admId=document.getElementById('master-adm-id').value;
+            const nome=document.getElementById('master-adm-nome').value.trim();
+            const empresaId=document.getElementById('master-adm-empresa-id').value;
+            if(!admId || !empresaId) return;
+            if(!confirm(`Excluir definitivamente o ADM "${nome || 'selecionado'}"?\n\nA conta de autenticação e o perfil serão removidos. Esta ação não pode ser desfeita.`)) return;
+            try{
+                await chamarMasterAdmin({action:'delete_admin',admin_id:admId,empresa_id:empresaId});
+                fecharGerenciarAdmMaster();
+                await renderMasterEmpresas();
+                alert('ADM excluído com sucesso.');
+            }catch(err){console.error(err);alert(err.message || 'Não foi possível excluir o ADM.');}
         }
 
         async function entrarPerfilAdmMaster(empresaId, nomeAdm){

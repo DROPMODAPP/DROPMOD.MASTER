@@ -839,29 +839,15 @@
             }
 
             try {
-                const { data: empresa, error: empresaError } = await supabaseClient
-                    .from('empresas')
-                    .insert({ nome, ativa:true })
-                    .select('id, nome, ativa, criado_em')
-                    .single();
-
-                if(empresaError) throw empresaError;
-
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
-
-                const { data: result, error: fnError } = await supabaseClient.functions.invoke('criar-adm', {
-                    body: { empresa_id: empresa.id, nome: admNome, usuario: user, email, senha: pass }
+                const result = await chamarMasterAdmin({
+                    action:'create_company_admin',
+                    empresa_nome:nome,
+                    nome:admNome,
+                    usuario:user,
+                    email,
+                    senha:pass
                 });
-
-                if(fnError) {
-                    await supabaseClient.from('empresas').delete().eq('id', empresa.id);
-                    throw fnError;
-                }
-                if(!result?.ok) {
-                    await supabaseClient.from('empresas').delete().eq('id', empresa.id);
-                    throw new Error(result?.error || 'Não foi possível criar o ADM.');
-                }
+                if(!result?.ok) throw new Error(result?.error || 'Não foi possível criar empresa e ADM.');
 
                 fecharModalNovaEmpresa();
                 ['nova-empresa-nome','novo-adm-nome','novo-adm-user','novo-adm-email','novo-adm-pass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
@@ -879,23 +865,16 @@
             box.innerHTML='<div class="md:col-span-2 xl:col-span-3 text-center text-sm text-slate-400 py-10">Carregando empresas...</div>';
 
             try {
-                const { data: empresas, error } = await supabaseClient
-                    .from('empresas')
-                    .select('id, nome, logo_url, ativa, criado_em')
-                    .order('criado_em', { ascending:false });
-                if(error) throw error;
+                const result = await chamarMasterAdmin({action:'list_companies'});
+                const empresas = result.empresas || [];
 
-                if(!empresas?.length) {
+                if(!empresas.length) {
                     box.innerHTML='<div class="md:col-span-2 xl:col-span-3 bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-sm text-slate-400">Nenhuma empresa criada. Clique em <b>+ Nova empresa</b>.</div>';
                     return;
                 }
 
-                const result = await chamarMasterAdmin({action:'list_companies'});
-                const admIds = {};
-                (result.empresas || []).forEach(row => { if (row.adm) admIds[row.id] = row.adm; });
-
                 box.innerHTML=empresas.map(e=>{
-                    const adm=admIds[e.id];
+                    const adm=e.adm;
                     return `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                     <div class="flex justify-between gap-3">
                         <div><h3 class="font-black text-slate-900">${escapeHtml(e.nome)}</h3>
@@ -919,10 +898,14 @@
         function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 
         async function alternarEmpresaMaster(id, ativa){
-            if(!masterSessaoAtiva || !supabaseClient) return;
-            const { error } = await supabaseClient.from('empresas').update({ ativa }).eq('id', id);
-            if(error) return alert(error.message);
-            await renderMasterEmpresas();
+            if(!masterSessaoAtiva) return;
+            try {
+                await chamarMasterAdmin({action:'update_company_status',empresa_id:id,ativa:!!ativa});
+                await renderMasterEmpresas();
+            } catch(err) {
+                console.error(err);
+                alert(err.message || 'Não foi possível alterar o status da empresa.');
+            }
         }
 
         function abrirGerenciarAdmMaster(empresaId, admId, nome, usuario, empresaNome){

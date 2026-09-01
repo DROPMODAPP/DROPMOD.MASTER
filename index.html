@@ -825,20 +825,6 @@
         function abrirModalNovaEmpresa(){ if(!masterSessaoAtiva) return; const e=document.getElementById('modal-nova-empresa'); e.classList.remove('hidden'); e.classList.add('flex'); }
         function fecharModalNovaEmpresa(){ const e=document.getElementById('modal-nova-empresa'); e.classList.add('hidden'); e.classList.remove('flex'); }
 
-        async function excluirEmpresaMaster(empresaId, empresaNome){
-            if(!masterSessaoAtiva || !empresaId) return;
-            const confirmacao = prompt(`EXCLUSÃO DEFINITIVA\n\nEmpresa: ${empresaNome}\n\nIsso apagará a empresa e os dados vinculados. Digite EXCLUIR para confirmar:`);
-            if(confirmacao !== 'EXCLUIR') return;
-            try{
-                await chamarMasterAdmin({action:'delete_company', empresa_id:empresaId});
-                await renderMasterEmpresas();
-                alert(`Empresa "${empresaNome}" excluída definitivamente.`);
-            }catch(err){
-                console.error(err);
-                alert(err.message || 'Não foi possível excluir a empresa.');
-            }
-        }
-
         async function criarEmpresaMaster(){
             if(!masterSessaoAtiva || !supabaseClient) return alert('Sessão MASTER inválida.');
 
@@ -900,7 +886,6 @@
                         <button onclick="alternarEmpresaMaster('${e.id}', ${!e.ativa})" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100">${e.ativa?'Desativar':'Ativar'}</button>
                         ${adm ? `<button onclick="abrirGerenciarAdmMaster('${e.id}','${escapeHtml(adm.id)}','${escapeHtml(adm.nome)}','${escapeHtml(adm.usuario)}','${escapeHtml(e.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700">Gerenciar ADM</button>
                         <button onclick="entrarPerfilAdmMaster('${e.id}','${escapeHtml(adm.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-600 text-white">↪ Acessar painel</button>` : '<span class="text-xs text-slate-400 py-2">Nenhum ADM vinculado</span>'}
-                        <button onclick="excluirEmpresaMaster('${e.id}','${escapeHtml(e.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-red-50 text-red-700">🗑 Excluir empresa</button>
                     </div>
                 </div>`;
                 }).join('');

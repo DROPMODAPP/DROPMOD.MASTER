@@ -26,49 +26,11 @@
             <div class="text-center">
                 <img src="https://i.ibb.co/M580Zw7n/1787759966265.png" alt="Logo" class="w-16 h-16 rounded-2xl object-cover mx-auto mb-3 border-2 border-slate-200 shadow">
                 <h2 class="text-2xl font-black text-slate-900">DROP MOD</h2>
-                <p id="subtitulo-login" class="text-xs text-slate-500 mt-1">Selecione o tipo de acesso</p>
-            </div>
-
-            <!-- SELETOR DE TIPO DE LOGIN -->
-            <div class="flex rounded-xl bg-slate-100 p-1 gap-1">
-                <button type="button" onclick="mudarTipoLogin('operador')" id="tab-login-op" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow-sm text-slate-800 transition">Operador</button>
-                <button type="button" onclick="mudarTipoLogin('admin')" id="tab-login-adm" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition">Administrador</button>
-                <button type="button" onclick="mudarTipoLogin('master')" id="tab-login-master" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition">MASTER</button>
-            </div>
-
-            <!-- FORMULÁRIO OPERADOR -->
-            <div id="form-login-operador" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Usuário do Operador</label>
-                    <input type="text" id="op-user" placeholder="Digite seu usuário" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha</label>
-                    <div class="relative"><input type="password" id="op-pass" placeholder="••••••••" autocomplete="current-password" class="w-full p-3 pr-12 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500"><button type="button" onclick="alternarVisibilidadeSenha('op-pass', this)" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500 hover:text-slate-800">👁</button></div>
-                </div>
-                <button onclick="fazerLoginOperador()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition text-sm shadow-md">
-                    Entrar como Operador
-                </button>
-            </div>
-
-            <!-- FORMULÁRIO ADMINISTRADOR -->
-            <div id="form-login-admin" class="space-y-4 hidden">
-                <div id="admin-msg-container">
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Usuário do Administrador</label>
-                    <input type="text" id="adm-user" value="admin" placeholder="admin" autocomplete="username" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
-                    <p id="admin-label-status" class="text-xs font-bold text-slate-700 uppercase mb-1 mt-3">Senha de Administração</p>
-                    <div class="relative"><input type="password" id="adm-pass" placeholder="••••••••" autocomplete="current-password" class="w-full p-3 pr-12 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500"><button type="button" onclick="alternarVisibilidadeSenha('adm-pass', this)" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500 hover:text-slate-800">👁</button></div>
-                </div>
-                <button onclick="fazerLoginAdmin()" id="btn-admin-submit" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition text-sm shadow-md">
-                    Acessar Administração
-                </button>
-                <div class="text-center pt-1">
-                    <button type="button" onclick="abrirModalRecuperacao()" id="link-esqueci-senha" class="text-xs text-slate-500 hover:text-slate-900 underline hidden">Esqueci minha senha</button>
-                </div>
+                <p id="subtitulo-login" class="text-xs text-slate-500 mt-1">Acesso exclusivo do MASTER</p>
             </div>
 
             <!-- FORMULÁRIO MASTER -->
-            <div id="form-login-master" class="space-y-4 hidden">
+            <div id="form-login-master" class="space-y-4">
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-600">
                     <b class="text-slate-900">Acesso central do DROP MOD.</b><br>Use o MASTER para criar e administrar as empresas e os respectivos administradores.
                 </div>

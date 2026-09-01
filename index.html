@@ -980,7 +980,7 @@
             if(!supabaseClient) throw new Error('Supabase não configurado.');
             const { data:{session} } = await supabaseClient.auth.getSession();
             if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
-            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/criar-adm`,{
+            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/master-adm`,{
                 method:'POST',
                 headers:{'Content-Type':'application/json','apikey':supabaseConfig.key,'Authorization':`Bearer ${session.access_token}`},
                 body:JSON.stringify(payload)

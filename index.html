@@ -825,6 +825,20 @@
         function abrirModalNovaEmpresa(){ if(!masterSessaoAtiva) return; const e=document.getElementById('modal-nova-empresa'); e.classList.remove('hidden'); e.classList.add('flex'); }
         function fecharModalNovaEmpresa(){ const e=document.getElementById('modal-nova-empresa'); e.classList.add('hidden'); e.classList.remove('flex'); }
 
+        async function excluirEmpresaMaster(empresaId, empresaNome){
+            if(!masterSessaoAtiva || !empresaId) return;
+            const confirmacao = prompt(`EXCLUSÃO DEFINITIVA\n\nEmpresa: ${empresaNome}\n\nIsso apagará a empresa e os dados vinculados. Digite EXCLUIR para confirmar:`);
+            if(confirmacao !== 'EXCLUIR') return;
+            try{
+                await chamarMasterAdmin({action:'delete_company', empresa_id:empresaId});
+                await renderMasterEmpresas();
+                alert(`Empresa "${empresaNome}" excluída definitivamente.`);
+            }catch(err){
+                console.error(err);
+                alert(err.message || 'Não foi possível excluir a empresa.');
+            }
+        }
+
         async function criarEmpresaMaster(){
             if(!masterSessaoAtiva || !supabaseClient) return alert('Sessão MASTER inválida.');
 
@@ -898,20 +912,6 @@
 
         function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
 
-        async function excluirEmpresaMaster(empresaId, empresaNome){
-            if(!masterSessaoAtiva) return;
-            const confirmacao = prompt(`ATENÇÃO: esta ação apagará DEFINITIVAMENTE a empresa e os dados vinculados a ela.\n\nEmpresa: ${empresaNome}\n\nDigite EXCLUIR para confirmar:`);
-            if(confirmacao !== 'EXCLUIR') return;
-            try{
-                await chamarMasterAdmin({action:'delete_company',empresa_id:empresaId});
-                await renderMasterEmpresas();
-                alert(`Empresa "${empresaNome}" excluída definitivamente.`);
-            }catch(err){
-                console.error(err);
-                alert(err.message || 'Não foi possível excluir a empresa.');
-            }
-        }
-
         async function alternarEmpresaMaster(id, ativa){
             if(!masterSessaoAtiva) return;
             try {
@@ -940,14 +940,17 @@
             if(!supabaseClient) throw new Error('Supabase não configurado.');
             const { data:{session} } = await supabaseClient.auth.getSession();
             if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
-            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/criar-adm`,{
-                method:'POST',
-                headers:{'Content-Type':'application/json','apikey':supabaseConfig.key,'Authorization':`Bearer ${session.access_token}`},
-                body:JSON.stringify(payload)
+
+            const { data, error } = await supabaseClient.functions.invoke('criar-adm', {
+                body: payload
             });
-            const data=await resp.json().catch(()=>({}));
-            if(!resp.ok) throw new Error(data.error || 'Operação MASTER não autorizada.');
-            return data;
+
+            if(error){
+                console.error('Erro na Edge Function criar-adm:', error);
+                throw new Error(error.message || 'Não foi possível comunicar com o servidor MASTER.');
+            }
+            if(data?.error) throw new Error(data.error);
+            return data || {};
         }
 
         async function salvarGerenciamentoAdmMaster(){

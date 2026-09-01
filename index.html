@@ -886,6 +886,7 @@
                         <button onclick="alternarEmpresaMaster('${e.id}', ${!e.ativa})" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100">${e.ativa?'Desativar':'Ativar'}</button>
                         ${adm ? `<button onclick="abrirGerenciarAdmMaster('${e.id}','${escapeHtml(adm.id)}','${escapeHtml(adm.nome)}','${escapeHtml(adm.usuario)}','${escapeHtml(e.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700">Gerenciar ADM</button>
                         <button onclick="entrarPerfilAdmMaster('${e.id}','${escapeHtml(adm.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-600 text-white">↪ Acessar painel</button>` : '<span class="text-xs text-slate-400 py-2">Nenhum ADM vinculado</span>'}
+                        <button onclick="excluirEmpresaMaster('${e.id}','${escapeHtml(e.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-red-50 text-red-700">🗑 Excluir empresa</button>
                     </div>
                 </div>`;
                 }).join('');
@@ -896,6 +897,20 @@
         }
 
         function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+
+        async function excluirEmpresaMaster(empresaId, empresaNome){
+            if(!masterSessaoAtiva) return;
+            const confirmacao = prompt(`ATENÇÃO: esta ação apagará DEFINITIVAMENTE a empresa e os dados vinculados a ela.\n\nEmpresa: ${empresaNome}\n\nDigite EXCLUIR para confirmar:`);
+            if(confirmacao !== 'EXCLUIR') return;
+            try{
+                await chamarMasterAdmin({action:'delete_company',empresa_id:empresaId});
+                await renderMasterEmpresas();
+                alert(`Empresa "${empresaNome}" excluída definitivamente.`);
+            }catch(err){
+                console.error(err);
+                alert(err.message || 'Não foi possível excluir a empresa.');
+            }
+        }
 
         async function alternarEmpresaMaster(id, ativa){
             if(!masterSessaoAtiva) return;
@@ -925,17 +940,14 @@
             if(!supabaseClient) throw new Error('Supabase não configurado.');
             const { data:{session} } = await supabaseClient.auth.getSession();
             if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
-
-            const { data, error } = await supabaseClient.functions.invoke('criar-adm', {
-                body: payload
+            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/criar-adm`,{
+                method:'POST',
+                headers:{'Content-Type':'application/json','apikey':supabaseConfig.key,'Authorization':`Bearer ${session.access_token}`},
+                body:JSON.stringify(payload)
             });
-
-            if(error){
-                console.error('Erro na Edge Function criar-adm:', error);
-                throw new Error(error.message || 'Não foi possível comunicar com o servidor MASTER.');
-            }
-            if(data?.error) throw new Error(data.error);
-            return data || {};
+            const data=await resp.json().catch(()=>({}));
+            if(!resp.ok) throw new Error(data.error || 'Operação MASTER não autorizada.');
+            return data;
         }
 
         async function salvarGerenciamentoAdmMaster(){

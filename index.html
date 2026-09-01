@@ -121,8 +121,12 @@
             <input id="nova-empresa-nome" placeholder="Nome da empresa" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
             <input id="novo-adm-nome" placeholder="Nome do ADM" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
             <input id="novo-adm-user" placeholder="Usuário do ADM (único)" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
+<p class="mt-1 text-xs text-slate-400">Único e sem espaços.</p>
             <input id="novo-adm-email" type="email" placeholder="E-mail do ADM" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
-            <input id="novo-adm-pass" type="password" placeholder="Senha inicial do ADM" class="w-full p-3 border border-slate-300 rounded-xl text-sm">
+            <div class="relative">
+<input id="novo-adm-pass" type="password" placeholder="Senha inicial do ADM" class="pr-12 w-full p-3 border border-slate-300 rounded-xl text-sm">
+<button type="button" onclick="toggleNovoAdmSenha()" aria-label="Mostrar ou ocultar senha" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 text-xl leading-none select-none">👁️</button>
+</div>
             <div class="flex gap-2"><button onclick="fecharModalNovaEmpresa()" class="w-1/2 bg-slate-200 py-2.5 rounded-xl text-xs font-bold">Cancelar</button><button onclick="criarEmpresaMaster()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold">Criar empresa + ADM</button></div>
         </div>
     </div>
@@ -825,6 +829,19 @@
         function abrirModalNovaEmpresa(){ if(!masterSessaoAtiva) return; const e=document.getElementById('modal-nova-empresa'); e.classList.remove('hidden'); e.classList.add('flex'); }
         function fecharModalNovaEmpresa(){ const e=document.getElementById('modal-nova-empresa'); e.classList.add('hidden'); e.classList.remove('flex'); }
 
+        function toggleNovoAdmSenha(){
+            const input = document.getElementById('novo-adm-pass');
+            if(!input) return;
+            const button = input.parentElement?.querySelector('button[aria-label="Mostrar ou ocultar senha"]');
+            if(input.type === 'password'){
+                input.type = 'text';
+                if(button) button.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                if(button) button.textContent = '👁️';
+            }
+        }
+
         async function criarEmpresaMaster(){
             if(!masterSessaoAtiva || !supabaseClient) return alert('Sessão MASTER inválida.');
 
@@ -900,13 +917,13 @@
 
         async function excluirEmpresaMaster(empresaId, empresaNome){
             if(!masterSessaoAtiva) return;
-            const confirmacao = prompt(`ATENÇÃO: esta ação apagará DEFINITIVAMENTE a empresa e todos os dados vinculados a ela.\n\nEmpresa: ${empresaNome}\n\nDigite EXCLUIR para confirmar:`);
+            const confirmacao = prompt(`ATENÇÃO: esta ação apagará DEFINITIVAMENTE a empresa e os dados vinculados a ela.\n\nEmpresa: ${empresaNome}\n\nDigite EXCLUIR para confirmar:`);
             if(confirmacao !== 'EXCLUIR') return;
-            try {
-                await chamarMasterAdmin({ action:'delete_company', empresa_id:empresaId });
+            try{
+                await chamarMasterAdmin({action:'delete_company',empresa_id:empresaId});
                 await renderMasterEmpresas();
                 alert(`Empresa "${empresaNome}" excluída definitivamente.`);
-            } catch(err) {
+            }catch(err){
                 console.error(err);
                 alert(err.message || 'Não foi possível excluir a empresa.');
             }
@@ -940,17 +957,14 @@
             if(!supabaseClient) throw new Error('Supabase não configurado.');
             const { data:{session} } = await supabaseClient.auth.getSession();
             if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
-
-            const { data, error } = await supabaseClient.functions.invoke('criar-adm', {
-                body: payload
+            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/criar-adm`,{
+                method:'POST',
+                headers:{'Content-Type':'application/json','apikey':supabaseConfig.key,'Authorization':`Bearer ${session.access_token}`},
+                body:JSON.stringify(payload)
             });
-
-            if(error){
-                console.error('Erro na Edge Function criar-adm:', error);
-                throw new Error(error.message || 'Não foi possível comunicar com o servidor MASTER.');
-            }
-            if(data?.error) throw new Error(data.error);
-            return data || {};
+            const data=await resp.json().catch(()=>({}));
+            if(!resp.ok) throw new Error(data.error || 'Operação MASTER não autorizada.');
+            return data;
         }
 
         async function salvarGerenciamentoAdmMaster(){

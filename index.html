@@ -44,7 +44,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha</label>
-                    <input type="password" id="op-pass" placeholder="••••••••" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
+                    <div class="relative"><input type="password" id="op-pass" placeholder="••••••••" autocomplete="current-password" class="w-full p-3 pr-12 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500"><button type="button" onclick="alternarVisibilidadeSenha('op-pass', this)" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500 hover:text-slate-800">👁</button></div>
                 </div>
                 <button onclick="fazerLoginOperador()" class="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition text-sm shadow-md">
                     Entrar como Operador
@@ -57,7 +57,7 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Usuário do Administrador</label>
                     <input type="text" id="adm-user" value="admin" placeholder="admin" autocomplete="username" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
                     <p id="admin-label-status" class="text-xs font-bold text-slate-700 uppercase mb-1 mt-3">Senha de Administração</p>
-                    <input type="password" id="adm-pass" placeholder="••••••••" autocomplete="current-password" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
+                    <div class="relative"><input type="password" id="adm-pass" placeholder="••••••••" autocomplete="current-password" class="w-full p-3 pr-12 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500"><button type="button" onclick="alternarVisibilidadeSenha('adm-pass', this)" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500 hover:text-slate-800">👁</button></div>
                 </div>
                 <button onclick="fazerLoginAdmin()" id="btn-admin-submit" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition text-sm shadow-md">
                     Acessar Administração
@@ -78,7 +78,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha MASTER</label>
-                    <input type="password" id="master-pass" placeholder="••••••••" autocomplete="current-password" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500">
+                    <div class="relative"><input type="password" id="master-pass" placeholder="••••••••" autocomplete="current-password" class="w-full p-3 pr-12 border border-slate-300 rounded-xl text-sm outline-none focus:border-emerald-500"><button type="button" onclick="alternarVisibilidadeSenha('master-pass', this)" aria-label="Mostrar senha MASTER" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500 hover:text-slate-800">👁</button></div>
                 </div>
                 <button onclick="fazerLoginMaster()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition text-sm shadow-md">
                     Entrar como MASTER
@@ -104,6 +104,30 @@
             </div>
             <div id="master-lista-empresas" class="grid md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
         </main>
+    </div>
+
+    <!-- MODAL DE GERENCIAMENTO DO ADM PELO MASTER -->
+    <div id="modal-gerenciar-adm-master" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center z-[70] p-4">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md space-y-4">
+            <div>
+                <h3 class="text-lg font-black text-slate-900">Gerenciar Administrador</h3>
+                <p id="master-adm-contexto" class="text-xs text-slate-500 mt-1"></p>
+            </div>
+            <input type="hidden" id="master-adm-id">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome do ADM</label>
+                <input id="master-adm-nome" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nova senha</label>
+                <div class="relative"><input id="master-adm-senha" type="password" placeholder="Deixe vazio para não alterar" class="w-full p-3 pr-12 border border-slate-300 rounded-xl text-sm outline-none focus:border-indigo-500"><button type="button" onclick="alternarVisibilidadeSenha('master-adm-senha', this)" aria-label="Mostrar nova senha" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 text-slate-500">👁</button></div>
+                <p class="text-[10px] text-slate-400 mt-1">A senha atual não pode ser revelada pelo Supabase. Aqui você pode definir uma nova.</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="button" onclick="fecharGerenciarAdmMaster()" class="w-1/2 bg-slate-200 text-slate-700 py-2.5 rounded-xl text-xs font-bold">Cancelar</button>
+                <button type="button" onclick="salvarGerenciamentoAdmMaster()" class="w-1/2 bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold">Salvar alterações</button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL DE SETUP DO MASTER -->
@@ -161,6 +185,10 @@
     </div>
 
     <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="masterDelegacaoBanner" class="hidden fixed top-0 left-0 right-0 z-[80] bg-indigo-700 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-lg">
+        <span id="masterDelegacaoTexto">MODO MASTER — gerenciando empresa</span>
+        <button type="button" onclick="sairDoModoMasterDelegado()" class="bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-lg">← Voltar ao Master</button>
+    </div>
     <div id="appContent" class="hidden flex flex-col md:flex-row h-screen overflow-hidden">
         
         <!-- BARRA SUPERIOR MOBILE -->
@@ -449,7 +477,7 @@
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Senha de Acesso</label>
-                            <input type="password" id="novo-op-pass" placeholder="••••••••" required class="w-full border border-slate-300 rounded-lg p-2.5 text-xs outline-none">
+                            <div class="relative"><input type="password" id="novo-op-pass" placeholder="••••••••" required autocomplete="new-password" class="w-full border border-slate-300 rounded-lg p-2.5 pr-10 text-xs outline-none"><button type="button" onclick="alternarVisibilidadeSenha('novo-op-pass', this)" aria-label="Mostrar senha do operador" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 text-slate-500 hover:text-slate-800">👁</button></div>
                         </div>
                         <div class="flex items-end">
                             <button type="submit" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow">Cadastrar Operador</button>
@@ -689,7 +717,20 @@
                 if(emp) { emp.state=JSON.parse(JSON.stringify(banco)); localStorage.setItem('dropmod_master_v1',JSON.stringify(masterDb)); }
             }
 
-            // Se o Supabase estiver configurado, sincroniza a tabela principal 'app_state'
+            if (masterManagedCompanyId) {
+                try {
+                    await chamarMasterAdmin({action:'update_company_state',empresa_id:masterManagedCompanyId,dados:banco});
+                    document.getElementById('dbStatusLabel').innerText = "Supabase: Sincronizado ☁️";
+                    document.getElementById('dbStatusLabel').className = "text-[10px] text-emerald-400";
+                } catch (err) {
+                    console.error("Erro ao salvar no modo MASTER:", err);
+                    document.getElementById('dbStatusLabel').innerText = "Supabase: Erro Sync ⚠️";
+                    document.getElementById('dbStatusLabel').className = "text-[10px] text-red-400";
+                }
+                return;
+            }
+
+            // Sincronização normal
             if (supabaseClient) {
                 try {
                     await supabaseClient
@@ -709,6 +750,14 @@
         }
 
         async function carregarBancoDoSupabase() {
+            if (masterManagedCompanyId) {
+                try {
+                    const result=await chamarMasterAdmin({action:'get_company_state',empresa_id:masterManagedCompanyId});
+                    if(result.dados) banco=result.dados;
+                    renderizar();
+                } catch(err){ console.warn('Não foi possível carregar o estado da empresa:',err); }
+                return;
+            }
             if (supabaseClient) {
                 try {
                     const { data, error } = await supabaseClient
@@ -727,47 +776,6 @@
                 } catch (err) {
                     console.log("Nenhum dado remoto encontrado ou tabela não criada ainda. Usando local.");
                 }
-            }
-        }
-
-        function salvarConfigSupabase(e) {
-            e.preventDefault();
-
-            supabaseConfig = { url, key };
-            localStorage.setItem('dropmod_supabase_config', JSON.stringify(supabaseConfig));
-
-            if (url && key) {
-                try {
-                    supabaseClient = window.supabase.createClient(url, key);
-                    alert('Configuração do Supabase salva com sucesso! Testando conexão...');
-                    testarConexaoSupabase();
-                } catch (err) {
-                    alert('Erro ao instanciar o Supabase. Verifique a URL e a Key.');
-                }
-            } else {
-                supabaseClient = null;
-                alert('Configuração removida. Usando armazenamento local.');
-            }
-            renderizar();
-        }
-
-        async function testarConexaoSupabase() {
-            if (!supabaseClient) {
-                alert('Supabase não configurado.');
-                return;
-            }
-            try {
-                const { data, error } = await supabaseClient.from('dropmod_state').select('id').limit(1);
-                if (error && error.code === '42P01') {
-                    alert('⚠️ Conectado ao Supabase, mas a tabela "dropmod_state" não existe.\n\nExecute o comando SQL no seu Supabase SQL Editor:\n\nCREATE TABLE dropmod_state (id INT PRIMARY KEY, dados JSONB, atualizado_em TIMESTAMP);');
-                } else if (error) {
-                    alert('Erro na conexão: ' + error.message);
-                } else {
-                    alert('✅ Conexão com o Supabase estabelecida com sucesso!');
-                    carregarBancoDoSupabase();
-                }
-            } catch (err) {
-                alert('Falha ao conectar: ' + err.message);
             }
         }
 
@@ -914,14 +922,26 @@
                 return;
             }
 
-            box.innerHTML=empresas.map(e=>`<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+            const admIds = {};
+            const { data: adms } = await supabaseClient.from('perfis').select('id, nome, usuario, ativo, empresa_id').eq('tipo','ADM');
+            (adms || []).forEach(a => { admIds[a.empresa_id] = a; });
+
+            box.innerHTML=empresas.map(e=>{
+                const adm=admIds[e.id];
+                return `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
                 <div class="flex justify-between gap-3">
                     <div><h3 class="font-black text-slate-900">${escapeHtml(e.nome)}</h3>
-                    <p class="text-xs text-slate-500 mt-1">ID: <b>${escapeHtml(e.id)}</b></p></div>
+                    <p class="text-xs text-slate-500 mt-1">ADM: <b>${escapeHtml(adm?.nome || 'Não encontrado')}</b></p>
+                    <p class="text-[11px] text-slate-400">Usuário: ${escapeHtml(adm?.usuario || '-')}</p></div>
                     <span class="text-[10px] font-black px-2 py-1 rounded-full ${e.ativa?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-700'}">${e.ativa?'ATIVA':'INATIVA'}</span>
                 </div>
-                <div class="mt-4 flex gap-2"><button onclick="alternarEmpresaMaster('${e.id}', ${!e.ativa})" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100">${e.ativa?'Desativar':'Ativar'}</button></div>
-            </div>`).join('');
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <button onclick="alternarEmpresaMaster('${e.id}', ${!e.ativa})" class="text-xs font-bold px-3 py-2 rounded-lg bg-slate-100">${e.ativa?'Desativar':'Ativar'}</button>
+                    ${adm ? `<button onclick="abrirGerenciarAdmMaster('${e.id}','${escapeHtml(adm.id)}','${escapeHtml(adm.nome)}','${escapeHtml(adm.usuario)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700">Gerenciar ADM</button>
+                    <button onclick="entrarPerfilAdmMaster('${e.id}','${escapeHtml(adm.nome)}')" class="text-xs font-bold px-3 py-2 rounded-lg bg-indigo-600 text-white">↪ Acessar painel</button>` : ''}
+                </div>
+            </div>`;
+            }).join('');
         }
 
         function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
@@ -939,6 +959,78 @@
             if(error) return alert(error.message);
             if(!data) return alert('Nenhum ADM cadastrado para esta empresa.');
             alert(`ADM: ${data.nome}\nUsuário: ${data.usuario}\nStatus: ${data.ativo?'Ativo':'Inativo'}\n\nA senha não pode ser exibida pelo Supabase. O MASTER poderá redefini-la em uma próxima etapa.`);
+        }
+
+        let masterManagedCompanyId = null;
+        let masterManagedCompanyName = null;
+
+        function abrirGerenciarAdmMaster(empresaId, admId, nome, usuario){
+            if(!masterSessaoAtiva) return;
+            document.getElementById('master-adm-id').value = admId;
+            document.getElementById('master-adm-nome').value = nome || '';
+            document.getElementById('master-adm-senha').value = '';
+            document.getElementById('master-adm-contexto').innerText = `Empresa: ${empresaId} • Usuário: ${usuario}`;
+            const m=document.getElementById('modal-gerenciar-adm-master'); m.classList.remove('hidden'); m.classList.add('flex');
+        }
+        function fecharGerenciarAdmMaster(){ const m=document.getElementById('modal-gerenciar-adm-master'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+        async function chamarMasterAdmin(payload){
+            if(!supabaseClient) throw new Error('Supabase não configurado.');
+            const { data:{session} } = await supabaseClient.auth.getSession();
+            if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
+            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/master-admin`,{
+                method:'POST',
+                headers:{'Content-Type':'application/json','apikey':supabaseConfig.key,'Authorization':`Bearer ${session.access_token}`},
+                body:JSON.stringify(payload)
+            });
+            const data=await resp.json().catch(()=>({}));
+            if(!resp.ok) throw new Error(data.error || 'Operação MASTER não autorizada.');
+            return data;
+        }
+
+        async function salvarGerenciamentoAdmMaster(){
+            try{
+                const admId=document.getElementById('master-adm-id').value;
+                const nome=document.getElementById('master-adm-nome').value.trim();
+                const senha=document.getElementById('master-adm-senha').value;
+                if(!nome) return alert('Informe o nome do ADM.');
+                if(senha && senha.length<6) return alert('A nova senha deve ter pelo menos 6 caracteres.');
+                await chamarMasterAdmin({action:'update_admin',admin_id:admId,nome,senha:senha||null});
+                fecharGerenciarAdmMaster();
+                await renderMasterEmpresas();
+                alert(senha ? 'Nome e senha do ADM atualizados.' : 'Nome do ADM atualizado.');
+            }catch(err){console.error(err);alert(err.message || 'Não foi possível atualizar o ADM.');}
+        }
+
+        async function entrarPerfilAdmMaster(empresaId, nomeAdm){
+            if(!masterSessaoAtiva) return;
+            try{
+                const result=await chamarMasterAdmin({action:'get_company_state',empresa_id:empresaId});
+                masterManagedCompanyId=empresaId; masterManagedCompanyName=result.empresa_nome || empresaId;
+                empresaAtivaId=empresaId;
+                banco=result.dados || banco;
+                currentUserRole='admin';
+                usuarioAtivoSessao={nome:nomeAdm,tipo:'admin'};
+                window.dropmodOrganizationId=empresaId;
+                masterSessaoAtiva=false;
+                document.getElementById('masterContent').classList.add('hidden');
+                document.getElementById('appContent').classList.remove('hidden');
+                const banner=document.getElementById('masterDelegacaoBanner');
+                banner.classList.remove('hidden');
+                document.getElementById('masterDelegacaoTexto').innerText=`MODO MASTER — gerenciando: ${masterManagedCompanyName} / ${nomeAdm}`;
+                renderizar();
+            }catch(err){console.error(err);alert(err.message || 'Não foi possível acessar o painel do ADM.');}
+        }
+
+        async function sairDoModoMasterDelegado(){
+            try{
+                masterManagedCompanyId=null; masterManagedCompanyName=null;
+                document.getElementById('masterDelegacaoBanner').classList.add('hidden');
+                document.getElementById('appContent').classList.add('hidden');
+                document.getElementById('masterContent').classList.remove('hidden');
+                masterSessaoAtiva=true;
+                await renderMasterEmpresas();
+            }catch(err){alert(err.message || 'Não foi possível voltar ao Master.');}
         }
 
 function mudarTipoLogin(tipo) {
@@ -1082,31 +1174,37 @@ function mudarTipoLogin(tipo) {
         }
 
         // --- GESTÃO DE OPERADORES COM NOME ---
-        async function criarOperador(e) {
-            e.preventDefault();
-            const nome = document.getElementById('novo-op-nome').value.trim();
-            const pass = document.getElementById('novo-op-pass').value;
-            if(!nome || !pass) return;
-            if(!supabaseClient) { alert('Configure o Supabase antes de cadastrar operadores.'); return; }
-            if(currentUserRole !== 'admin') { alert('Apenas o ADM pode cadastrar operadores.'); return; }
-            if(pass.length < 6) { alert('A senha deve ter pelo menos 6 caracteres.'); return; }
+        function alternarVisibilidadeSenha(id, botao) {
+            const input = document.getElementById(id);
+            if (!input) return;
+            const mostrando = input.type === 'text';
+            input.type = mostrando ? 'password' : 'text';
+            if (botao) {
+                botao.textContent = mostrando ? '👁' : '🙈';
+                botao.setAttribute('aria-label', mostrando ? 'Mostrar senha' : 'Ocultar senha');
+            }
+        }
 
+        async function alterarSenhaOperador(nome) {
+            if (currentUserRole !== 'admin') { alert('Apenas o ADM pode alterar senhas de operadores.'); return; }
+            const novaSenha = prompt(`Nova senha para o operador "${nome}":`);
+            if (novaSenha === null) return;
+            if (novaSenha.length < 6) { alert('A senha deve ter pelo menos 6 caracteres.'); return; }
+            const confirmar = prompt('Digite novamente a nova senha para confirmar:');
+            if (confirmar !== novaSenha) { alert('As senhas não conferem.'); return; }
             try {
-                const { data: sessionData } = await supabaseClient.auth.getSession();
-                const accessToken = sessionData?.session?.access_token;
-                if(!accessToken) throw new Error('Sessão administrativa não encontrada. Faça login novamente.');
-
-                await chamarQuickTask({ action: 'create_operator', username: nome, password: pass, name: nome }, accessToken);
-                banco.operadores = (banco.operadores || []).filter(o => o.nome.toLowerCase() !== nome.toLowerCase());
-                banco.operadores.push({ nome, auth: true });
-                localStorage.setItem('dropmod_banco_v120', JSON.stringify(banco));
-                document.getElementById('novo-op-nome').value = '';
-                document.getElementById('novo-op-pass').value = '';
-                renderizar();
-                alert(`Operador "${nome}" cadastrado com sucesso no Supabase!`);
+                if (masterManagedCompanyId) {
+                    await chamarMasterAdmin({ action: 'reset_operator_password', empresa_id: masterManagedCompanyId, username: nome, password: novaSenha });
+                } else {
+                    const { data: sessionData } = await supabaseClient.auth.getSession();
+                    const token = sessionData?.session?.access_token;
+                    if (!token) throw new Error('Sessão administrativa não encontrada. Faça login novamente.');
+                    await chamarQuickTask({ action: 'reset_operator_password', username: nome, password: novaSenha }, token);
+                }
+                alert(`Senha do operador "${nome}" alterada com sucesso.`);
             } catch (err) {
                 console.error(err);
-                alert(err.message || 'Não foi possível criar o operador.');
+                alert(err.message || 'Não foi possível alterar a senha do operador.');
             }
         }
 
@@ -1654,7 +1752,7 @@ function mudarTipoLogin(tipo) {
                 listaOps.innerHTML = banco.operadores.length ? banco.operadores.map(o => `
                     <div class="flex justify-between items-center p-2 bg-slate-50 rounded border text-xs">
                         <span>👤 <b>${o.nome}</b></span>
-                        <button onclick="excluirOperador('${o.nome}')" class="text-red-600 font-bold hover:underline">Remover</button>
+                        <div class="flex items-center gap-2"><button type="button" onclick="alterarSenhaOperador('${o.nome.replace("'", "\'")}')" class="text-indigo-600 font-bold hover:underline">Alterar senha</button><button type="button" onclick="excluirOperador('${o.nome.replace("'", "\'")}')" class="text-red-600 font-bold hover:underline">Remover</button></div>
                     </div>
                 `).join('') : '<span class="text-xs text-slate-400 italic">Nenhum operador cadastrado.</span>';
             }

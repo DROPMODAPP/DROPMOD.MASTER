@@ -928,9 +928,9 @@
                     return;
                 }
 
-                const result = await chamarMasterAdmin({action:'list_admins'});
+                const result = await chamarMasterAdmin({action:'list_companies'});
                 const admIds = {};
-                (result.admins || []).forEach(a => { admIds[a.empresa_id] = a; });
+                (result.empresas || []).forEach(row => { if (row.adm) admIds[row.id] = row.adm; });
 
                 box.innerHTML=empresas.map(e=>{
                     const adm=admIds[e.id];
@@ -980,7 +980,7 @@
             if(!supabaseClient) throw new Error('Supabase não configurado.');
             const { data:{session} } = await supabaseClient.auth.getSession();
             if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
-            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/master-admin`,{
+            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/criar-adm`,{
                 method:'POST',
                 headers:{'Content-Type':'application/json','apikey':supabaseConfig.key,'Authorization':`Bearer ${session.access_token}`},
                 body:JSON.stringify(payload)

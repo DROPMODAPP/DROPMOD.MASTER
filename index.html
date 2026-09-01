@@ -925,14 +925,17 @@
             if(!supabaseClient) throw new Error('Supabase não configurado.');
             const { data:{session} } = await supabaseClient.auth.getSession();
             if(!session?.access_token) throw new Error('Sessão MASTER expirada. Entre novamente.');
-            const resp=await fetch(`${supabaseConfig.url.replace(/\/$/,'')}/functions/v1/criar-adm`,{
-                method:'POST',
-                headers:{'Content-Type':'application/json','apikey':supabaseConfig.key,'Authorization':`Bearer ${session.access_token}`},
-                body:JSON.stringify(payload)
+
+            const { data, error } = await supabaseClient.functions.invoke('criar-adm', {
+                body: payload
             });
-            const data=await resp.json().catch(()=>({}));
-            if(!resp.ok) throw new Error(data.error || 'Operação MASTER não autorizada.');
-            return data;
+
+            if(error){
+                console.error('Erro na Edge Function criar-adm:', error);
+                throw new Error(error.message || 'Não foi possível comunicar com o servidor MASTER.');
+            }
+            if(data?.error) throw new Error(data.error);
+            return data || {};
         }
 
         async function salvarGerenciamentoAdmMaster(){

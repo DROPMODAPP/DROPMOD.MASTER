@@ -1,1 +1,8 @@
-
+{
+  "versionCode": 1,
+  "versionName": "1.0-Master",
+  "apkUrl": "https://dropmodapp.github.io/DROPMOD.MASTER/DROP-MOD-MASTER.apk",
+  "title": "Nova atualização do DROP MOD Master",
+  "notes": "Nova versão do DROP MOD Master disponível.",
+  "mandatory": false
+}
